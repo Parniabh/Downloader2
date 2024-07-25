@@ -1,11 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
-#include <QDebug>
-#include <QString>
-#include <QVector>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -13,12 +7,16 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     ui->ProcessJson->setEnabled(false);
-    downloader = new Downloader();
+
+    downloader = new Downloader("https://api.weather.gov/gridpoints/TOP/32,81/forecast/hourly");
+
     connect(downloader, SIGNAL(download_finished_sgnl()), this, SLOT(enable_button()));
-    connect(ui->ProcessJson, SIGNAL(clicked()),this, SLOT(show_json()));
-    downloader->execute();
+    connect(ui->ProcessJson, SIGNAL(clicked()), this, SLOT(show_json()));
+    connect(ui->listWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(onlistchanged(QListWidgetItem*)));
 
-
+    // Set the URL for the initial download
+    //downloader->setUrl("https://api.weather.gov/gridpoints/TOP/32,81/forecast/hourly");
+    //downloader->execute();
 }
 
 MainWindow::~MainWindow()
@@ -34,128 +32,102 @@ void MainWindow::enable_button()
 void MainWindow::show_json()
 {
     QJsonObject jsonobject = downloader->loadedJson.object();
-    qDebug()<<jsonobject;
-    int j = 0;
-    foreach(const QString& key, jsonobject.keys()) {
-        QJsonValue value = jsonobject.value(key);
-        qDebug() << "Key = " << key << ", Value = " << value;
-        ui->listWidget->insertItem(j, key);
-        j++;
-    }
-    QString forcast_url = jsonobject.value("properties").toObject().value("forecast").toString();
-    qDebug()<<"url: " << forcast_url;
+    qDebug() << jsonobject;
 
-}
+    // Extracting the forecast URL
+    qDebug() << "Level 1: " << jsonobject.value("properties");
+    qDebug() << "Level 2: " << jsonobject.value("properties").toObject().value("periods");
 
-struct weather_data {
-    QString name;
-    double temperature;
-    QString id;
-    QString type;
-    QString geometryType;
-    QVector<double> coordinates;
-    QString propertiesType;
-    QString county;
-    QString cwa;
-    QString fireWeatherZone;
-    QString forecast;
-    QString forecastGridData;
-    QString forecastHourly;
-    QString forecastOffice;
-    QString forecastZone;
-    QString gridId;
-    int gridX;
-    int gridY;
-    QString timeZone;
-};
+    forecastArray = jsonobject.value("properties").toObject().value("periods").toArray();
 
-// the JSON-LD data
-void WeatherData(const QByteArray& jsonData) {
-    QJsonDocument doc = QJsonDocument::fromJson(jsonData);
-    QJsonObject root = doc.object();
-
-    // Extract geometry
-    QJsonObject geometry = root["geometry"].toObject();
-    QString geometryType = geometry["type"].toString();
-    QJsonArray coordinatesArray = geometry["coordinates"].toArray();
-    QVector<double> coordinates;
-    for (const QJsonValue& coordValue : coordinatesArray) {
-        coordinates.append(coordValue.toDouble());
+    for (int i=0; i<forecastArray.size(); i++)
+    {
+        qDebug()<< "Forecast Array (" << i << "):  " <<forecastArray[i];
     }
 
-    // Extract id and type
-    QString id = root["id"].toString();
-    QString type = root["type"].toString();
+    QString forecastUrl = jsonobject.value("properties").toObject().value("forecastHourly").toString();
+    qDebug() << "Forecast URL: " << forecastUrl;
 
-    // Extract properties
-    QJsonObject properties = root["properties"].toObject();
-    QString propertiesType = properties["@type"].toString(); // Assuming it's a string
-    QString county = properties["county"].toString();
-    QString cwa = properties["cwa"].toString();
-    QString fireWeatherZone = properties["fireWeatherZone"].toString();
-    QString forecast = properties["forecast"].toString();
-    QString forecastGridData = properties["forecastGridData"].toString();
-    QString forecastHourly = properties["forecastHourly"].toString();
-    QString forecastOffice = properties["forecastOffice"].toString();
-    QString forecastZone = properties["forecastZone"].toString();
-    QString gridId = properties["gridId"].toString();
-    int gridX = properties["gridX"].toInt();
-    int gridY = properties["gridY"].toInt();
+    showDatainList();
+    //connect(downloader, SIGNAL(download_finished_sgnl()), this, SLOT(process_forecast_data()));
+    /* If forecast URL is available, proceed to download and process the forecast data
+    if (!forecastUrl.isEmpty()) {
+        // Disconnect the previous signal-slot connection and connect to process forecast data
+        disconnect(downloader, SIGNAL(download_finished_sgnl()), this, SLOT(enable_button()));
 
 
-
-    // Extract timeZone
-    QString timeZone = properties["timeZone"].toString();
-
-    // Create a weather_data object
-    weather_data weather;
-    weather.geometryType = geometryType;
-    weather.coordinates = coordinates;
-    weather.id = id;
-    weather.type = type;
-    weather.propertiesType = propertiesType;
-    weather.county = county;
-    weather.cwa = cwa;
-    weather.fireWeatherZone = fireWeatherZone;
-    weather.forecast = forecast;
-    weather.forecastGridData = forecastGridData;
-    weather.forecastHourly = forecastHourly;
-    weather.forecastOffice = forecastOffice;
-    weather.forecastZone = forecastZone;
-    weather.gridId = gridId;
-    weather.gridX = gridX;
-    weather.gridY = gridY;
-   weather.timeZone = timeZone;
-
-    // Example usage
-    qDebug() << "Geometry Type: " << weather.geometryType;
-    qDebug() << "Coordinates: " << weather.coordinates;
-    qDebug() << "ID: " << weather.id;
-    qDebug() << "Type: " << weather.type;
-    qDebug() << "Properties Type: " << weather.propertiesType;
-    qDebug() << "County: " << weather.county;
-    qDebug() << "CWA: " << weather.cwa;
-    qDebug() << "Fire Weather Zone: " << weather.fireWeatherZone;
-    qDebug() << "Forecast: " << weather.forecast;
-    qDebug() << "Forecast Grid Data: " << weather.forecastGridData;
-    qDebug() << "Forecast Hourly: " << weather.forecastHourly;
-    qDebug() << "Forecast Office: " << weather.forecastOffice;
-    qDebug() << "Forecast Zone: " << weather.forecastZone;
-    qDebug() << "Grid ID: " << weather.gridId;
-    qDebug() << "Grid X: " << weather.gridX;
-    qDebug() << "Grid Y: " << weather.gridY;
-    qDebug() << "Time Zone: " << weather.timeZone;
-
-    // Print or store other properties as required
+        downloader->setUrl(forecastUrl);
+        downloader->execute();
+    }*/
 }
 
-// Example usage
-int mainWindow() {
-    QByteArray jsonData = R"(
-        // Paste your JSON-LD data here
-    )";
+void MainWindow::showDatainList()
+{
+    for (int i=0; i<forecastArray.size(); i++)
+    {
+        ui->listWidget_contents->addItem(forecastArray[i].toObject().value("startTime").toString());
+    }
+}
 
-    WeatherData(jsonData);
+void MainWindow::process_forecast_data()
+{
+    QJsonObject forecastJson = downloader->loadedJson.object();
+    qDebug() << forecastJson;
 
-    return 0;
+    // Assuming forecastJson contains the hourly forecast data
+    QJsonValue forecastHourly = forecastJson.value("properties").toObject().value("period");
+
+    if (forecastHourly.isArray()) {
+        QJsonArray hourlyForecastArray = forecastHourly.toArray();
+
+        ui->listWidget->clear();
+        int j = 0;
+        foreach (const QJsonValue &value, hourlyForecastArray) {
+            QJsonObject forecastObj = value.toObject();
+            QString startTime = forecastObj.value("startTime").toString();
+            ui->listWidget->insertItem(j, startTime);
+            jsonValues[startTime] = value;
+            j++;
+        }
+    } else if (forecastHourly.isObject()) {
+        QJsonObject hourlyForecastObj = forecastHourly.toObject();
+
+        ui->listWidget->clear();
+        int j = 0;
+        foreach (const QString &key, hourlyForecastObj.keys()) {
+            QJsonValue value = hourlyForecastObj.value(key);
+            ui->listWidget->insertItem(j, key);
+            jsonValues[key] = value;
+            j++;
+        }
+    } else {
+        qDebug() << "Unexpected data format for forecast hourly";
+    }
+}
+
+void MainWindow::onlistchanged(QListWidgetItem *item)
+{
+    ui->listWidget_contents->clear();
+    QJsonValue selectedValue = jsonValues[item->text()];
+
+    if (selectedValue.isString()) {
+        ui->lineEdit->setText(selectedValue.toString());
+    } else if (selectedValue.isObject()) {
+        QJsonObject jsonObject = selectedValue.toObject();
+        foreach (const QString &key, jsonObject.keys()) {
+            QString valueStr = jsonObject.value(key).toString();
+            ui->listWidget_contents->addItem(key + ": " + valueStr);
+        }
+    } else if (selectedValue.isArray()) {
+        QJsonArray jsonArray = selectedValue.toArray();
+        for (int i = 0; i < jsonArray.size(); ++i) {
+            QJsonObject jsonObject = jsonArray[i].toObject();
+            foreach (const QString &key, jsonObject.keys()) {
+                QString valueStr = jsonObject.value(key).toString();
+                ui->listWidget_contents->addItem(key + ": " + valueStr);
+            }
+        }
+    } else {
+        ui->lineEdit->setText("Unsupported JSON value type");
+    }
 }
