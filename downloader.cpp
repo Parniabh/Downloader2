@@ -94,3 +94,4 @@ bool Downloader::isHttpRedirect(QNetworkReply *reply)
            || statusCode == 305 || statusCode == 307 || statusCode == 308;
 }
 
+

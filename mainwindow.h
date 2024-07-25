@@ -25,20 +25,26 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    QVector<weatherDatapoint> weatherforecast;
+    //QVector<weatherDatapoint> weatherforecast;
     QJsonArray forecastArray;
 private:
     Ui::MainWindow *ui;
     Downloader *downloader;
     QMap<QString, QJsonValue> jsonValues;
     void showDatainList();
-    QString getForecastURL(const QString &url);
+    void inigetForecastURL(const QString &url);
+
     QJsonArray getForecastArray(const QString &url);
+    QString forecastURL;
+
 public slots:
     void enable_button();
     void show_json();
     void onlistchanged(QListWidgetItem *item);
     void process_forecast_data();
+    void getForecastURL();
+    void getWeatherPrediction();
+
 };
 
 #endif // MAINWINDOW_H

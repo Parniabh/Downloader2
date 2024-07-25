@@ -8,9 +8,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     ui->ProcessJson->setEnabled(false);
 
-    downloader = new Downloader("https://api.weather.gov/gridpoints/TOP/32,81/forecast/hourly");
-
-    connect(downloader, SIGNAL(download_finished_sgnl()), this, SLOT(enable_button()));
+    inigetForecastURL("https://api.weather.gov/points/39.7456,-97.0892");
     connect(ui->ProcessJson, SIGNAL(clicked()), this, SLOT(show_json()));
     connect(ui->listWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(onlistchanged(QListWidgetItem*)));
 
@@ -130,4 +128,23 @@ void MainWindow::onlistchanged(QListWidgetItem *item)
     } else {
         ui->lineEdit->setText("Unsupported JSON value type");
     }
+}
+
+void MainWindow::inigetForecastURL(const QString &url)
+{
+    downloader = new Downloader(url);
+    connect(downloader, SIGNAL(download_finished_sgnl()), this, SLOT(getForecastURL()));
+}
+
+void MainWindow::getForecastURL()
+{
+    forecastURL =  downloader->loadedJson.object().value("properties").toObject().value("forecastHourly").toString();
+    delete downloader;
+    downloader = new Downloader(forecastURL);
+    connect(downloader, SIGNAL(download_finished_sgnl()), this, SLOT(getWeatherPrediction()));
+}
+
+void MainWindow::getWeatherPrediction()
+{
+    qDebug()<<downloader->loadedJson;
 }
