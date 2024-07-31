@@ -6,7 +6,8 @@ Downloader::Downloader()
     connect(&manager, &QNetworkAccessManager::finished, this, &Downloader::downloadFinished);
 }
 
-Downloader::Downloader(const QString &_url)
+Downloader::Downloader(const QString &_url,QObject *parent)
+  : QObject(parent), downloadUrl(_url)
 {
     QNetworkProxyFactory::setUseSystemConfiguration(true);
     connect(&manager, &QNetworkAccessManager::finished, this, &Downloader::downloadFinished);
@@ -19,7 +20,16 @@ Downloader::Downloader(const QString &_url)
 #endif
 
 }
+void Downloader::start(const QString &_url)
+{
+    QUrl url = QUrl::fromEncoded(_url.toLocal8Bit());
+    QNetworkRequest request(url);
+    QNetworkReply *reply = manager.get(request);
 
+#if QT_CONFIG(ssl)
+    connect(reply, &QNetworkReply::sslErrors, this, &Downloader::sslErrors);
+#endif
+}
 void Downloader::setUrl(const QString &url)
 {
     downloadUrl = url;

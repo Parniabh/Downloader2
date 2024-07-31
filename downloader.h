@@ -5,6 +5,7 @@
 #include <QtNetwork>
 #include <QJsonDocument>
 #include <cstdio>
+#include<QObject>
 
 QT_BEGIN_NAMESPACE
 class QSslError;
@@ -15,12 +16,15 @@ using namespace std;
 class Downloader : public QObject
 {
     Q_OBJECT
+
+
     QNetworkAccessManager manager;
     QVector<QNetworkReply *> currentDownloads;
 
 public:
     Downloader();
-    Downloader(const QString &url);
+    Downloader(const QString &url,QObject *parent = nullptr);
+    void start(const QString &_url);
     void doDownload(const QUrl &url);
     void setUrl(const QString &url);
     static QString saveFileName(const QUrl &url);

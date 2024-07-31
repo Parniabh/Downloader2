@@ -27,6 +27,7 @@ public:
     ~MainWindow();
     //QVector<weatherDatapoint> weatherforecast;
     QJsonArray forecastArray;
+
 private:
     Ui::MainWindow *ui;
     Downloader *downloader;
@@ -44,6 +45,7 @@ public slots:
     void process_forecast_data();
     void getForecastURL();
     void getWeatherPrediction();
+;
 
 };
 

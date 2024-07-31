@@ -140,11 +140,39 @@ void MainWindow::getForecastURL()
 {
     forecastURL =  downloader->loadedJson.object().value("properties").toObject().value("forecastHourly").toString();
     delete downloader;
-    downloader = new Downloader(forecastURL);
+    downloader = new Downloader(forecastURL, this);
     connect(downloader, SIGNAL(download_finished_sgnl()), this, SLOT(getWeatherPrediction()));
 }
 
 void MainWindow::getWeatherPrediction()
 {
-    qDebug()<<downloader->loadedJson;
+    // Check if downloader is valid and has loaded JSON data
+    if (!downloader || downloader->loadedJson.isNull()) {
+        qDebug() << "No valid JSON data loaded.";
+        return;
+    }
+
+    // Extract the forecast array from the loaded JSON
+    QJsonObject jsonObject = downloader->loadedJson.object();
+    QJsonArray periodsArray = jsonObject.value("periods").toArray();
+
+    // Clear the previous data from the list widget
+    ui->listWidget_contents->clear();
+
+    // Process each forecast period
+    for (const QJsonValue &value : periodsArray) {
+        QJsonObject forecastObj = value.toObject();
+
+        // Extract relevant fields from each forecast period
+        QString startTime = forecastObj.value("startTime").toString();
+        QString temperature = forecastObj.value("temperature").toString();  // Adjust based on actual field name
+        QString weather = forecastObj.value("weather").toString();  // Adjust based on actual field name
+
+        // Add the extracted data to the list widget
+        QString itemText = QString("Start Time: %1, Temperature: %2, Weather: %3")
+                               .arg(startTime)
+                               .arg(temperature)
+                               .arg(weather);
+        ui->listWidget_contents->addItem(itemText);
+    }
 }
