@@ -144,6 +144,61 @@ void MainWindow::getForecastURL()
     connect(downloader, SIGNAL(download_finished_sgnl()), this, SLOT(getWeatherPrediction()));
 }
 
+//void MainWindow::getWeatherPrediction()
+//{
+
+   // if (!downloader || downloader->loadedJson.isNull()) {
+   //     qDebug() << "No valid JSON data loaded.";
+    //    return;
+   // }
+    //QJsonObject jsonObject = downloader->loadedJson.object();
+
+    //qDebug()<<jsonObject;
+
+    //QJsonObject propObj = jsonObject.value("properties").toObject();
+
+    //qDebug() << propObj;
+
+    //QJsonValue periodsObj = propObj.value("periods");
+
+    //qDebug() << periodsObj;
+
+   // QJsonArray periodsArray = periodsObj.toArray();
+
+    //qDebug() << periodsArray;
+
+    //ui->listWidget_contents->clear();
+
+   // for (int i=0; i<periodsArray.count(); i++)
+   // {
+    //    qDebug()<<periodsArray[i];
+    //}
+
+    //for (const QJsonValue &value : periodsArray) {
+        //QJsonObject forecastObj = value.toObject();
+
+        // Create a WeatherDataPoint and populate it with data
+        //WeatherDataPoint dataPoint;
+        //dataPoint.startTime = forecastObj.value("startTime").toString();
+        //dataPoint.temperature = forecastObj.value("temperature").toString();
+        //dataPoint.weather = forecastObj.value("weather").toString();
+        //dataPoint.probabilityOfPrecipitation = forecastObj.value("probabilityOfPrecipitation").toDouble();
+        //dataPoint.relativeHumidity = forecastObj.value("relativeHumidity").toString();
+
+        // Append the populated dataPoint to the QVector
+       // weatherData.append(dataPoint);
+
+        // Add the extracted data to the list widget for display
+        //QString itemText = QString("Start Time: %1, Temperature: %2, Weather: %3, Probability of Precipitation: %4, Relative Humidity: %5")
+        //                       .arg(dataPoint.startTime)
+        //                       .arg(dataPoint.temperature)
+        //                       .arg(dataPoint.weather)
+        //                       .arg(dataPoint.probabilityOfPrecipitation)
+       //                        .arg(dataPoint.relativeHumidity);
+       // ui->listWidget_contents->addItem(itemText);
+   // }
+   // }
+
 void MainWindow::getWeatherPrediction()
 {
     // Check if downloader is valid and has loaded JSON data
@@ -152,27 +207,58 @@ void MainWindow::getWeatherPrediction()
         return;
     }
 
-    // Extract the forecast array from the loaded JSON
-    QJsonObject jsonObject = downloader->loadedJson.object();
-    QJsonArray periodsArray = jsonObject.value("periods").toArray();
+
+
 
     // Clear the previous data from the list widget
+
+    QJsonObject jsonObject = downloader->loadedJson.object();
+
+    qDebug()<<jsonObject;
+
+    QJsonObject propObj = jsonObject.value("properties").toObject();
+
+    qDebug() << propObj;
+
+    QJsonValue periodsObj = propObj.value("periods");
+
+    qDebug() << periodsObj;
+
+     QJsonArray periodsArray = periodsObj.toArray();
+
+    qDebug() << periodsArray;
+
     ui->listWidget_contents->clear();
+    // QVector to store the weather predictions
+    QVector<WeatherDataPoint> weatherData;
 
     // Process each forecast period
     for (const QJsonValue &value : periodsArray) {
         QJsonObject forecastObj = value.toObject();
 
-        // Extract relevant fields from each forecast period
-        QString startTime = forecastObj.value("startTime").toString();
-        QString temperature = forecastObj.value("temperature").toString();  // Adjust based on actual field name
-        QString weather = forecastObj.value("weather").toString();  // Adjust based on actual field name
+        // Create a WeatherDataPoint and populate it with data
+        WeatherDataPoint dataPoint;
+        dataPoint.startTime = forecastObj.value("startTime").toString();
+        dataPoint.endTime = forecastObj.value("endTime").toString();
+        dataPoint.temperature = forecastObj.value("temperature").toDouble();
+        dataPoint.weather = forecastObj.value("weather").toString();
+        dataPoint.probabilityOfPrecipitation = forecastObj.value("probabilityOfPrecipitation").toDouble();
+        dataPoint.relativeHumidity = forecastObj.value("relativeHumidity").toString();
 
-        // Add the extracted data to the list widget
-        QString itemText = QString("Start Time: %1, Temperature: %2, Weather: %3")
-                               .arg(startTime)
-                               .arg(temperature)
-                               .arg(weather);
+        // Append the populated dataPoint to the QVector
+        weatherData.append(dataPoint);
+
+        // Add the extracted data to the list widget for display
+        QString itemText = QString("Start Time: %1, End Time: %2, Temperature: %3, Weather: %4, Probability of Precipitation: %5, Relative Humidity: %6")
+                               .arg(dataPoint.startTime)
+                               .arg(dataPoint.endTime)
+                               .arg(dataPoint.temperature)
+                               .arg(dataPoint.weather)
+                               .arg(dataPoint.probabilityOfPrecipitation)
+                               .arg(dataPoint.relativeHumidity);
         ui->listWidget_contents->addItem(itemText);
     }
+
+    // Optionally, you can store the weatherData QVector for later use
+    //this->weatherData = weatherData;
 }

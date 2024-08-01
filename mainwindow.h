@@ -16,6 +16,7 @@ struct weatherDatapoint
     QString startTime;
     QString endTime;
     double probability;
+
 };
 
 class MainWindow : public QMainWindow
@@ -35,9 +36,19 @@ private:
     void showDatainList();
     void inigetForecastURL(const QString &url);
 
+    struct WeatherDataPoint {
+        QString startTime;
+        QString endTime;
+        double temperature;
+        QString weather;
+        double probabilityOfPrecipitation;
+        QString relativeHumidity;
+    };
+
+
     QJsonArray getForecastArray(const QString &url);
     QString forecastURL;
-
+    QVector<weatherDatapoint> weatherData;
 public slots:
     void enable_button();
     void show_json();
